@@ -45,7 +45,7 @@ class FormConverter(object):
 
     def convert_TypedChoiceField(self, field, **kwargs):
         attrs = {
-            'choices': [i[0] for i in field.choices],
+            'choices': [i[0] for i in field.choices if not field.required or i[0]],
         }
         attrs.update(kwargs)
         return FuzzyChoice(**attrs)
