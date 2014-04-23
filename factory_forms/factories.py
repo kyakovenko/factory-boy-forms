@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Kirill S. Yakovenko'
 __email__ = 'kirill.yakovenko@gmail.com'
-__copyright__ = 'Copyright 2013, Kirill S. Yakovenko'
+__copyright__ = 'Copyright 2014, Kirill S. Yakovenko'
 
 from factory.fuzzy import FuzzyText, FuzzyChoice
 
 from . import unicode_letters
-from .fuzzy import FuzzyModelChoice, FuzzyRegex
+from .fuzzy import FuzzyModelChoice, FuzzyMultiModelChoice, FuzzyRegex
 
 
 class FormConverter(object):
@@ -58,12 +58,19 @@ class FormConverter(object):
         attrs.update(kwargs)
         return FuzzyText(**attrs)
 
-    def convert_ModelMultipleChoiceField(self, field, **kwargs):
+    def convert_ModelChoiceField(self, field, **kwargs):
         attrs = {
             'choices': field.choices,
         }
         attrs.update(kwargs)
         return FuzzyModelChoice(**attrs)
+
+    def convert_ModelMultipleChoiceField(self, field, **kwargs):
+        attrs = {
+            'choices': field.choices,
+        }
+        attrs.update(kwargs)
+        return FuzzyMultiModelChoice(**attrs)
 
     def convert_RegexField(self, field, **kwargs):
         attrs = {

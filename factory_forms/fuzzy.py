@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Kirill S. Yakovenko'
 __email__ = 'kirill.yakovenko@gmail.com'
-__copyright__ = 'Copyright 2013, Kirill S. Yakovenko'
+__copyright__ = 'Copyright 2014, Kirill S. Yakovenko'
 
 import rstr
 import random
@@ -56,6 +56,13 @@ class FuzzyModelChoice(fuzzy.BaseFuzzyAttribute):
     def fuzz(self):
         choices = list(i[0] for i in self.choices)
         return random.choice(choices)
+
+
+class FuzzyMultiModelChoice(FuzzyModelChoice):
+
+    def fuzz(self):
+        choices = list(i[0] for i in self.choices)
+        return [random.choice(choices) for _ in xrange(random.randint(1, len(choices)))]
 
 
 class FuzzyRegex(fuzzy.BaseFuzzyAttribute):
