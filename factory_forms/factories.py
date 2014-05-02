@@ -6,7 +6,7 @@ __copyright__ = 'Copyright 2014, Kirill S. Yakovenko'
 from factory.fuzzy import FuzzyText, FuzzyChoice
 
 from . import unicode_letters
-from .fuzzy import FuzzyModelChoice, FuzzyMultiModelChoice, FuzzyRegex
+from .fuzzy import FuzzyModelChoice, FuzzyModelMultiChoice, FuzzyRegex
 
 
 class FormConverter(object):
@@ -60,17 +60,19 @@ class FormConverter(object):
 
     def convert_ModelChoiceField(self, field, **kwargs):
         attrs = {
-            'choices': field.choices,
+            'empty_value': None if field.required else field.empty_values[0],
+            'queryset':  field.choices.queryset,
         }
         attrs.update(kwargs)
         return FuzzyModelChoice(**attrs)
 
     def convert_ModelMultipleChoiceField(self, field, **kwargs):
         attrs = {
-            'choices': field.choices,
+            'empty_value': None if field.required else field.empty_values[0],
+            'queryset':  field.choices.queryset,
         }
         attrs.update(kwargs)
-        return FuzzyMultiModelChoice(**attrs)
+        return FuzzyModelMultiChoice(**attrs)
 
     def convert_RegexField(self, field, **kwargs):
         attrs = {

@@ -48,21 +48,10 @@ class FuzzyFloat(fuzzy.BaseFuzzyAttribute):
         return random.uniform(self.low, self.high)
 
 
-class FuzzyModelChoice(fuzzy.BaseFuzzyAttribute):
-
-    def __init__(self, choices):
-        self.choices = choices
+class FuzzyMultiChoice(fuzzy.FuzzyChoice):
 
     def fuzz(self):
-        choices = list(i[0] for i in self.choices)
-        return random.choice(choices)
-
-
-class FuzzyMultiModelChoice(FuzzyModelChoice):
-
-    def fuzz(self):
-        choices = list(i[0] for i in self.choices)
-        return [random.choice(choices) for _ in xrange(random.randint(1, len(choices)))]
+        return [random.choice(self.choices) for _ in xrange(random.randint(1, len(self.choices)))]
 
 
 class FuzzyRegex(fuzzy.BaseFuzzyAttribute):
@@ -76,3 +65,32 @@ class FuzzyRegex(fuzzy.BaseFuzzyAttribute):
         if self.max_length:
             regex = regex[:self.max_length]
         return regex
+
+
+class FuzzyModelChoiceBase(fuzzy.BaseFuzzyAttribute):
+
+    def __init__(self, queryset, empty_value=None):
+        self.queryset = queryset
+        self.empty_value = empty_value
+
+    def fuzz(self):
+        choices = self.queryset.values_list('pk', flat=True)
+        if self.empty_value is not None:
+            choices.append(self.empty_value)
+        return self.make_choice(choices)
+
+    def make_choice(self, choices):
+        raise NotImplementedError
+
+
+class FuzzyModelChoice(FuzzyModelChoiceBase):
+
+    def make_choice(self, choices):
+        return random.choice(choices)
+
+
+class FuzzyModelMultiChoice(FuzzyModelChoiceBase):
+
+    def make_choice(self, choices):
+        start = 1 if self.empty_value is None else 0
+        return [random.choice(choices) for _ in xrange(random.randint(start, len(choices)))]
