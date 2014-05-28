@@ -81,3 +81,10 @@ class FormConverter(object):
         }
         attrs.update(kwargs)
         return FuzzyRegex(**attrs)
+
+    def convert_BooleanField(self, field, **kwargs):
+        attrs = {
+            'choices': [True, False]
+        }
+        attrs.update(kwargs)
+        return FuzzyChoice(**attrs)

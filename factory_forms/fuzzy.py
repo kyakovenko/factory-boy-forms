@@ -11,6 +11,11 @@ from collections import namedtuple
 
 
 class DateTimeTemplate(namedtuple('DateTimeTemplate', ('value', 'format'))):
+    """
+    The date time format declaration.
+
+
+    """
 
     def __iter__(self):
         raise TypeError

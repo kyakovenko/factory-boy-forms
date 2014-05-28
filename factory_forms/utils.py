@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Kirill S. Yakovenko'
 __email__ = 'kirill.yakovenko@gmail.com'
-__copyright__ = 'Copyright 2013, Kirill S. Yakovenko'
+__copyright__ = 'Copyright 2014, Kirill S. Yakovenko'
 __all__ = [
     'construct_factory_from_form',
     'construct_post_test',
@@ -33,14 +33,3 @@ def construct_factory_from_form(form_class, fields, exclude, settings):
         factory_fields['ABSTRACT_FACTORY'] = False
     return type('{0}Factory'.format(form_class_name), (Factory, ), factory_fields)
 
-
-def construct_get_test(user_name):
-    def test(self):
-        self.run_GET_request(user_name)
-    return test
-
-
-def construct_post_test(user_name):
-    def test(self):
-        self.run_POST_request(user_name)
-    return test
