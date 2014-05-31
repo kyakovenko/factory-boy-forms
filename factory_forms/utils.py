@@ -12,7 +12,7 @@ import six
 
 from django import forms
 from factory import Factory
-from factory.base import FACTORY_CLASS_DECLARATION
+FACTORY_CLASS_DECLARATION = 'FACTORY_FOR'
 
 from .factories import FormConverter
 

@@ -52,7 +52,7 @@ class FormConverter(object):
 
     def convert_EmailField(self, field, **kwargs):
         attrs = {
-            'length': field.max_length - 9,
+            'length': (field.max_length or 1000) - 9,
             'suffix': '@mail.com'
         }
         attrs.update(kwargs)
