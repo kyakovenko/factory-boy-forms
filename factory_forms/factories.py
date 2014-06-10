@@ -3,88 +3,122 @@ __author__ = 'Kirill S. Yakovenko'
 __email__ = 'kirill.yakovenko@gmail.com'
 __copyright__ = 'Copyright 2014, Kirill S. Yakovenko'
 
-from factory.fuzzy import FuzzyText, FuzzyChoice
+import six
+from factory.base import BaseFactory, FactoryMetaClass, FactoryOptions, OptionDefault
 
-from . import unicode_letters
-from .fuzzy import FuzzyModelChoice, FuzzyModelMultiChoice, FuzzyRegex
+from .converters import converters
+from .containers import AttributeBuilder
+
+ATTRIBUTES_STRATEGY = 'attributes'
 
 
-class FormConverter(object):
+def fields_for_form(form_class, fields=None, exclude=None, settings=None):
+    converter = None
+    factory_fields = {}
+    settings = settings or {}
 
-    def convert(self, form, field, field_args={}):
-        """
-        Returns a factory field for a single form field.
+    for c in converters:
+        if c.can_convert(form_class):
+            converter = c
+    if converter is None:
+        raise ValueError("There is no appropriate converter for '{0}' form".format(form_class.__class__.__name__))
 
-        :param form:
-            The ``django.forms.Form`` class that contains the field.
-        :param field:
-            The form field: a ``django.forms.Field`` instance.
-        :param field_args:
-            Optional keyword arguments to construct the property.
-        """
+    for name, field in six.iteritems(form_class.base_fields):
+        if fields and name not in fields:
+            continue
+        elif exclude and name in exclude:
+            continue
+        factory_fields[name] = converter.convert(form_class, field, settings.get(name, {}))
+    return factory_fields
 
-        # check for generic property
-        prop_type_name = type(field).__name__
-        converter = getattr(self, 'convert_{0}'.format(prop_type_name), None)
-        if converter is not None:
-            return converter(field, **field_args)
+
+class FormFactoryMetaClass(FactoryMetaClass):
+
+    def __call__(cls, *args, **kwargs):
+        return cls.attributes(*args, **kwargs)
+
+    def __new__(cls, class_name, bases, attrs):
+        new_class = super(FormFactoryMetaClass, cls).__new__(cls, class_name, bases, attrs)
+        meta = new_class._meta
+        declared_fields = meta.declarations
+        if meta.form:
+            fields = fields_for_form(meta.form, meta.fields, meta.exclude, meta.settings)
+            meta.form_fields = fields
+            fields.update(declared_fields)
         else:
-            return self.fallback_converter(field, **field_args)
+            fields = declared_fields
+        meta.declarations = fields
+        return new_class
 
-    def fallback_converter(self, field, **kwargs):
-        prop_type_name = type(field).__name__
-        raise NotImplementedError('There is no a converter for "{0}" field '.format(prop_type_name))
 
-    def convert_CharField(self, field, **kwargs):
-        attrs = {
-            'length': field.max_length or 1000,
-            'chars': unicode_letters
-        }
-        attrs.update(kwargs)
-        return FuzzyText(**attrs)
+class FormFactoryOptions(FactoryOptions):
 
-    def convert_TypedChoiceField(self, field, **kwargs):
-        attrs = {
-            'choices': [i[0] for i in field.choices if not field.required or i[0]],
-        }
-        attrs.update(kwargs)
-        return FuzzyChoice(**attrs)
+    def _build_default_options(self):
+        return [
+            OptionDefault('form', None, inherit=True),
+            OptionDefault('prefix', '', inherit=True),
+            OptionDefault('fields', None, inherit=True),
+            OptionDefault('exclude', (), inherit=True),
+            OptionDefault('settings', {}, inherit=True),
+            OptionDefault('converter', None, inherit=True),
+            OptionDefault('abstract', False, inherit=False),
+            OptionDefault('strategy', ATTRIBUTES_STRATEGY, inherit=True),
+        ]
 
-    def convert_EmailField(self, field, **kwargs):
-        attrs = {
-            'length': (field.max_length or 1000) - 9,
-            'suffix': '@mail.com'
-        }
-        attrs.update(kwargs)
-        return FuzzyText(**attrs)
+    def _fill_from_meta(self, meta, base_meta):
+        super(FormFactoryOptions, self)._fill_from_meta(meta, base_meta)
+        self.model = getattr(self.form, 'model', self.form)
 
-    def convert_ModelChoiceField(self, field, **kwargs):
-        attrs = {
-            'empty_value': None if field.required else field.empty_values[0],
-            'queryset':  field.choices.queryset,
-        }
-        attrs.update(kwargs)
-        return FuzzyModelChoice(**attrs)
 
-    def convert_ModelMultipleChoiceField(self, field, **kwargs):
-        attrs = {
-            'empty_value': None if field.required else field.empty_values[0],
-            'queryset':  field.choices.queryset,
-        }
-        attrs.update(kwargs)
-        return FuzzyModelMultiChoice(**attrs)
+class BaseFormFactory(BaseFactory):
+    _options_class = FormFactoryOptions
+    _meta = FormFactoryOptions()
+    _OLDSTYLE_ATTRIBUTES = {}
 
-    def convert_RegexField(self, field, **kwargs):
-        attrs = {
-            'regex': field._regex,
-            'max_length': field.max_length
-        }
-        attrs.update(kwargs)
-        return FuzzyRegex(**attrs)
+    @classmethod
+    def attributes(cls, create=False, extra=None, prefix=None):
+        """Build a dict of attribute values, respecting declaration order.
 
-    def convert_BooleanField(self, field, **kwargs):
-        attrs = {
-            'choices': [True, False]
-        }
-        attrs.update(kwargs)
-        return FuzzyChoice(**attrs)
+        The process is:
+        - Handle 'orderless' attributes, overriding defaults with provided
+            kwargs when applicable
+        - Handle ordered attributes, overriding them with provided kwargs when
+            applicable; the current list of computed attributes is available
+            to the currently processed object.
+        """
+        if prefix is None:
+            prefix = cls._meta.prefix or ''
+        force_sequence = None
+        if extra:
+            force_sequence = extra.pop('__sequence', None)
+        log_ctx = '%s.%s' % (cls.__module__, cls.__name__)
+        return AttributeBuilder(cls, extra, log_ctx=log_ctx).build(
+            create=create,
+            force_sequence=force_sequence,
+            prefix=prefix
+        )
+
+
+# class BaseFormSetFactory(BaseFormFactory):
+#
+#     @classmethod
+#     def attributes(cls, create=False, extra=None, prefix=None, count=None):
+#         data = super(BaseFormSetFactory, cls).attributes(create, extra, prefix)
+#         if count is None:
+#             count = cls._count or 1
+#         if prefix is None:
+#             prefix = cls._form_prefix
+#         for i in xrange(count):
+#             subprefix = '{0}-{1}'.format(prefix, i)
+#             data.update(
+#                 cls._sub_factory.attributes(create, extra, subprefix)
+#             )
+#         return data
+
+
+class FormFactory(six.with_metaclass(FormFactoryMetaClass, BaseFormFactory)):
+    pass
+
+
+# class FormSetFactory(six.with_metaclass(FormFactoryMetaClass, BaseFormSetFactory)):
+#     pass
