@@ -21,11 +21,10 @@ setup(
     author_email='kirill.yakovenko@gmail.com',
     url='https://github.com/kyakovenko/factory-boy-forms',
     keywords=['factory_boy_forms', 'factory_forms', 'fixtures'],
-    packages=['factory_forms'],
+    packages=['factory_forms', 'factory_forms.converters'],
     license='MIT',
     setup_requires=[
         'factory_boy>=2.3.1',
-        'django>1.6.0',
         'rstr>=2.1.2',
         'setuptools>=0.8',
     ],
