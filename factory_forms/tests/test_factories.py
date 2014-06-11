@@ -4,9 +4,9 @@ __email__ = 'contacts@crystalnix.com'
 __copyright__ = 'Copyright 2014, Crystalnix'
 
 from factory import fuzzy
-from nose.tools import assert_in
+from nose.tools import assert_in, assert_equal, assert_is_none
 
-from ..factories import FormFactory#, FormSetFactory
+from ..factories import FormFactory
 
 
 class FakeFormFactory(FormFactory):
@@ -38,7 +38,3 @@ def test_form_factory_attributes():
     data = FakeFormFactoryWithPrefix.attributes(prefix='test')
     assert_in('test-field', data)
 
-
-# def test_form_set_factory_attributes():
-#     data = FakeFormSetFactory.attributes()
-#     assert_in('field', data)

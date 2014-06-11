@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 __author__ = 'Kirill S. Yakovenko'
 __email__ = 'kirill.yakovenko@gmail.com'
 __copyright__ = 'Copyright 2014, Kirill S. Yakovenko'

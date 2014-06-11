@@ -6,6 +6,7 @@ __authors__ = 'Kirill S. Yakovenko, '
 __email__ = 'contacts@crystalnix.com'
 __copyright__ = 'Copyright 2014, Crystalnix'
 
+import six
 from factory import fuzzy
 from django.forms import BaseForm
 from django.forms.formsets import BaseFormSet
@@ -16,10 +17,17 @@ from ..fuzzy import FuzzyModelChoice, FuzzyModelMultiChoice, FuzzyRegex
 
 class DjangoFormConverter(object):
 
-    def can_convert(self, form):
+    def __init__(self, form):
+        self.form = form
+
+    @staticmethod
+    def can_convert(form):
         return issubclass(form, (BaseForm, BaseFormSet))
 
-    def convert(self, form, field, field_args={}):
+    def fields(self):
+        return six.iteritems(getattr(self.form, 'base_fields', {}))
+
+    def convert_field(self, form, field, field_args={}):
         """
         Returns a factory field for a single form field.
 
