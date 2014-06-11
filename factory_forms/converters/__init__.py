@@ -16,16 +16,15 @@ class FakeConverter(object):
         return False
 
 
-#try:
-from .django import DjangoFormConverter
-#except ImportError:
-#    DjangoFormConverter = FakeConverter
-#    DjangoFormSetConverter = FakeConverter
+try:
+    from .django import DjangoFormConverter
+except ImportError:
+    DjangoFormConverter = FakeConverter
 
 converters = [DjangoFormConverter, ]
 
 
-def fields_for_form(form_class, fields=None, exclude=None, settings=None):
+def fields_for_form(form_class, fields=None, exclude=None, settings=None, ignore_errors=True):
     factory_fields = {}
     converter_class = None
     settings = settings or {}
@@ -42,5 +41,9 @@ def fields_for_form(form_class, fields=None, exclude=None, settings=None):
             continue
         elif exclude and name in exclude:
             continue
-        factory_fields[name] = converter.convert_field(form_class, field, settings.get(name, {}))
+        try:
+            factory_fields[name] = converter.convert_field(form_class, field, settings.get(name, {}))
+        except NotImplementedError as exc:
+            if not ignore_errors:
+                raise exc
     return factory_fields

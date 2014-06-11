@@ -38,7 +38,7 @@ class FormSetFactoryMetaClass(FactoryMetaClass):
         meta = new_class._meta
         declared_fields = meta.declarations
         if meta.form:
-            fields = fields_for_form(meta.form, meta.fields, meta.exclude, meta.settings)
+            fields = fields_for_form(meta.form, meta.fields, meta.exclude, meta.settings, meta.force)
             meta.form_fields = fields
             fields.update(declared_fields)
         else:
@@ -58,6 +58,7 @@ class FormFactoryOptions(FactoryOptions):
             OptionDefault('settings', {}, inherit=True),
             OptionDefault('converter', None, inherit=True),
             OptionDefault('abstract', False, inherit=False),
+            OptionDefault('force', False, inherit=True),
             OptionDefault('strategy', ATTRIBUTES_STRATEGY, inherit=True),
         ]
 
