@@ -106,3 +106,11 @@ class DjangoFormConverter(object):
         }
         attrs.update(kwargs)
         return fuzzy.FuzzyChoice(**attrs)
+    
+    def convert_IntegerField(self, field, **kwargs):
+        attrs = {
+            'low': field.min_value if field.min_value else -100,
+            'high': field.max_value if field.max_value else 100,
+        }
+        attrs.update(kwargs)
+        return fuzzy.FuzzyInteger(**attrs)
